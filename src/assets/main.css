@@ -1,0 +1,34 @@
+@import "./base.css";
+
+/* 重置一些基础样式，避免与 vxeTable 冲突 */
+#app {
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  font-weight: normal;
+}
+
+/* 移除可能冲突的布局样式 */
+@media (min-width: 1024px) {
+  body {
+    display: block;
+  }
+
+  #app {
+    display: block;
+    padding: 0;
+  }
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
