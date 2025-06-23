@@ -2,23 +2,13 @@
   <div class="vxe-demo">
     <h2>VXE Table 演示案例</h2>
 
-    <!-- 使用说明 -->
-    <div class="usage-tip">
-      <p>💡 <strong>框选复制功能：</strong></p>
-      <ul>
-        <li>鼠标拖拽选择单元格区域</li>
-        <li>按 <kbd>Ctrl+C</kbd> 复制选中内容</li>
-        <li>按 <kbd>ESC</kbd> 清除选择</li>
-      </ul>
-    </div>
-
     <!-- 调试信息 -->
     <div class="debug-info">
       <p>调试信息：</p>
-      <p>选择状态: {{ isSelecting ? '选择中' : '未选择' }}</p>
-      <p>开始单元格: {{ startCell ? `${startCell.rowIndex},${startCell.colIndex}` : '无' }}</p>
-      <p>结束单元格: {{ endCell ? `${endCell.rowIndex},${endCell.colIndex}` : '无' }}</p>
-      <p>选中单元格数: {{ selectedCells.length }}</p>
+      <p>选择状态: {{ _$_isSelecting ? '选择中' : '未选择' }}</p>
+      <p>开始单元格: {{ _$_startCell ? `${_$_startCell.rowIndex},${_$_startCell.colIndex}` : '无' }}</p>
+      <p>结束单元格: {{ _$_endCell ? `${_$_endCell.rowIndex},${_$_endCell.colIndex}` : '无' }}</p>
+      <p>选中单元格数: {{ _$_selectedCells.length }}</p>
     </div>
 
     <!-- 表格 -->
@@ -27,25 +17,27 @@
       :data="tableData" 
       :checkbox-config="{ checkField: 'checked' }" 
       :sort-config="{ remote: false }"
-      :filter-config="{ remote: false }" 
+      :filter-config="{ remote: false }"
       :scroll-x="{ enabled: true }" 
       :scroll-y="{ enabled: true }" 
       height="400"
+      min-width="1200"
+      @cell-click="tableCellClick"
       @checkbox-change="checkboxChangeEvent" 
       @checkbox-all="checkboxAllEvent" 
       @sort-change="sortChangeEvent"
     >
       <vxe-column type="checkbox" width="60" fixed="left"></vxe-column>
       <vxe-column type="seq" width="60" title="序号" fixed="left"></vxe-column>
-      <vxe-column field="name" title="姓名" sortable></vxe-column>
-      <vxe-column field="age" title="年龄" sortable></vxe-column>
-      <vxe-column field="gender" title="性别"></vxe-column>
-      <vxe-column field="email" title="邮箱" sortable></vxe-column>
-      <vxe-column field="phone" title="电话"></vxe-column>
-      <vxe-column field="address" title="地址"></vxe-column>
-      <vxe-column field="status" title="状态"></vxe-column>
-      <vxe-column field="createTime" title="创建时间" sortable></vxe-column>
-      <vxe-column field="salary" title="薪资" sortable></vxe-column>
+      <vxe-column field="name" width="120" title="姓名" sortable></vxe-column>
+      <vxe-column field="age" width="80" title="年龄" sortable></vxe-column>
+      <vxe-column field="gender" width="80" title="性别"></vxe-column>
+      <vxe-column field="email" width="200" title="邮箱" sortable></vxe-column>
+      <vxe-column field="phone" width="140" title="电话"></vxe-column>
+      <vxe-column field="address" width="180" title="地址"></vxe-column>
+      <vxe-column field="status" width="100" title="状态"></vxe-column>
+      <vxe-column field="createTime" width="160" title="创建时间" sortable></vxe-column>
+      <vxe-column field="salary" width="120" title="薪资" sortable fixed="right"></vxe-column>
     </vxe-table>
 
     <!-- 分页 -->
@@ -56,8 +48,10 @@
     <!-- 统计信息 -->
     <div class="stats">
       <p>总记录数: {{ page.total }}</p>
+      <p>当前页记录数: {{ tableData.length }}</p>
       <p>选中记录数: {{ selectedRows.length }}</p>
-      <p>框选单元格数: {{ selectedCells.length }}</p>
+      <p>框选单元格数: {{ _$_selectedCells.length }}</p>
+      <p>当前页码: {{ page.currentPage }}/{{ Math.ceil(page.total / page.pageSize) }}</p>
     </div>
   </div>
 </template>
@@ -70,29 +64,60 @@ export default {
   mixins: [tableSelectionMixin],
   data() {
     return {
-      tableData: Array(100).fill(null).map((o, i) => (
+      // 完整数据
+      fullData: Array(100).fill(null).map((o, i) => (
         {
-          id: i,
-          name: '张三',
-          age: 25,
-          gender: '男',
-          email: 'zhangsan@example.com',
-          phone: '13800138001',
-          address: '北京市朝阳区',
-          status: '在职',
-          createTime: '2023-01-15 10:30:00',
-          salary: 8000
+          id: i + 1,
+          name: '张三' + (i + 1),
+          age: 20 + Math.floor(Math.random() * 40),
+          gender: Math.random() > 0.5 ? '男' : '女',
+          email: `user${i + 1}@example.com`,
+          phone: '138' + String(Math.floor(Math.random() * 100000000)).padStart(8, '0'),
+          address: ['北京市朝阳区', '上海市浦东区', '广州市天河区', '深圳市南山区'][Math.floor(Math.random() * 4)],
+          status: ['在职', '离职', '试用期'][Math.floor(Math.random() * 3)],
+          createTime: `2023-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')} 10:30:00`,
+          salary: 5000 + Math.floor(Math.random() * 15000)
         }
       )),
+      // 当前页显示的数据
+      tableData: [],
       selectedRows: [],
       page: {
         currentPage: 1,
         pageSize: 10,
-        total: 5
+        total: 100
       }
     }
   },
+  mounted() {
+    // 初始化第一页数据
+    this.loadPageData();
+  },
   methods: {
+    // 加载当前页数据
+    loadPageData() {
+      const { currentPage, pageSize } = this.page;
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      this.tableData = this.fullData.slice(startIndex, endIndex);
+      
+      // 清除选中状态
+      this.selectedRows = [];
+      
+      // 清除框选状态
+      if (this._$clearSelection) {
+        this._$clearSelection();
+      }
+    },
+    tableCellClick(cell) {
+      console.log('lhh-log:cellClick', cell);
+    },
+    handleTableResize() {
+      console.log('lhh-log:resize');
+      if (this._$_isSelecting) {
+        this._$clearSelection()
+      }
+    },
     // 复选框变化事件
     checkboxChangeEvent({ records }) {
       this.selectedRows = records
@@ -110,8 +135,11 @@ export default {
 
     // 分页变化
     handlePageChange({ currentPage, pageSize }) {
-      this.page.currentPage = currentPage
-      this.page.pageSize = pageSize
+      this.page.currentPage = currentPage;
+      this.page.pageSize = pageSize;
+      
+      // 重新加载当前页数据
+      this.loadPageData();
     }
   }
 }
@@ -195,7 +223,6 @@ export default {
 /* 表格样式优化 */
 :deep(.vxe-table) {
   border: 1px solid #e4e7ed;
-  border-radius: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -217,6 +244,50 @@ export default {
 
 :deep(.vxe-table--row.row--checked) {
   background-color: #ecf5ff;
+}
+
+/* 修复固定列定位问题 */
+:deep(.vxe-table) {
+  position: relative;
+}
+
+:deep(.vxe-table--main-wrapper) {
+  position: relative;
+}
+
+:deep(.vxe-table--fixed-left-wrapper),
+:deep(.vxe-table--fixed-right-wrapper) {
+  position: absolute !important;
+  top: 0 !important;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+:deep(.vxe-table--fixed-left-wrapper) {
+  left: 0 !important;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.vxe-table--fixed-right-wrapper) {
+  right: 0 !important;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 确保固定列背景色一致 */
+:deep(.vxe-table--fixed-left-wrapper .vxe-table--header-wrapper),
+:deep(.vxe-table--fixed-right-wrapper .vxe-table--header-wrapper) {
+  background-color: #fafafa;
+}
+
+:deep(.vxe-table--fixed-left-wrapper .vxe-table--body-wrapper),
+:deep(.vxe-table--fixed-right-wrapper .vxe-table--body-wrapper) {
+  background-color: #fff;
+}
+
+/* 防止固定列内容溢出 */
+:deep(.vxe-table--fixed-left-wrapper .vxe-table--body-wrapper),
+:deep(.vxe-table--fixed-right-wrapper .vxe-table--body-wrapper) {
+  overflow: hidden !important;
 }
 
 /* 分页样式 */

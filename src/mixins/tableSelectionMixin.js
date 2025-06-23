@@ -6,39 +6,39 @@ export default {
   data() {
     return {
       // 选择状态
-      isSelecting: false,
-      hasMoved: false, // 是否已经移动鼠标
-      startCell: null,
-      endCell: null,
-      selectedCells: [],
+      _$_isSelecting: false,
+      _$_hasMoved: false, // 是否已经移动鼠标
+      _$_startCell: null,
+      _$_endCell: null,
+      _$_selectedCells: [],
       // 滚动监听器
-      scrollListeners: [],
+      _$_scrollListeners: [],
       // 尺寸变化监听器
-      resizeObserver: null,
+      _$_resizeObserver: null,
       // 上次cell更新时间戳
-      lastCellUpdateTime: 0,
+      _$_lastCellUpdateTime: 0,
       // 防抖间隔
-      cellUpdateDebounce: 16,
+      _$_cellUpdateDebounce: 16,
     };
   },
 
   mounted() {
     this.$nextTick(() => {
-      this.initSelectionEvents();
-      this.initResizeObserver();
+      this._$initSelectionEvents();
+      this._$initResizeObserver();
     });
   },
 
   beforeDestroy() {
-    this.removeSelectionEvents();
-    this.removeResizeObserver();
+    this._$removeSelectionEvents();
+    this._$removeResizeObserver();
   },
 
   methods: {
     /**
      * 初始化选择事件
      */
-    initSelectionEvents() {
+    _$initSelectionEvents() {
       const tableEl = this.$refs.xTable?.$el;
       if (!tableEl) {
         console.warn("vxeTable 引用未找到");
@@ -46,70 +46,70 @@ export default {
       }
 
       // 鼠标按下事件
-      tableEl.addEventListener("mousedown", this.handleMouseDown);
+      tableEl.addEventListener("mousedown", this._$handleMouseDown);
       // 鼠标移动事件
-      document.addEventListener("mousemove", this.handleMouseMove);
+      document.addEventListener("mousemove", this._$handleMouseMove);
       // 鼠标松开事件
-      document.addEventListener("mouseup", this.handleMouseUp);
+      document.addEventListener("mouseup", this._$handleMouseUp);
       // 键盘事件
-      document.addEventListener("keydown", this.handleKeyDown);
+      document.addEventListener("keydown", this._$handleKeyDown);
     },
 
     /**
      * 移除选择事件
      */
-    removeSelectionEvents() {
-      document.removeEventListener("mousemove", this.handleMouseMove);
-      document.removeEventListener("mouseup", this.handleMouseUp);
-      document.removeEventListener("keydown", this.handleKeyDown);
+    _$removeSelectionEvents() {
+      document.removeEventListener("mousemove", this._$handleMouseMove);
+      document.removeEventListener("mouseup", this._$handleMouseUp);
+      document.removeEventListener("keydown", this._$handleKeyDown);
     },
 
     /**
      * 初始化尺寸变化监听器
      */
-    initResizeObserver() {
-      window.addEventListener("resize", this.clearSelection);
+    _$initResizeObserver() {
+      window.addEventListener("resize", this._$clearSelection);
       if (!window.ResizeObserver) return;
 
       const tableEl = this.$refs.xTable?.$el;
       if (!tableEl) return;
 
-      this.resizeObserver = new ResizeObserver(() => {
-        this.clearSelection();
+      this._$_resizeObserver = new ResizeObserver(() => {
+        this._$clearSelection();
       });
 
-      this.resizeObserver.observe(tableEl);
+      this._$_resizeObserver.observe(tableEl);
     },
 
     /**
      * 移除尺寸变化监听器
      */
-    removeResizeObserver() {
-      window.removeEventListener("resize", this.clearSelection);
-      if (this.resizeObserver) {
-        this.resizeObserver.disconnect();
-        this.resizeObserver = null;
+    _$removeResizeObserver() {
+      window.removeEventListener("resize", this._$clearSelection);
+      if (this._$_resizeObserver) {
+        this._$_resizeObserver.disconnect();
+        this._$_resizeObserver = null;
       }
     },
 
     /**
      * 处理鼠标按下事件
      */
-    handleMouseDown(event) {
-      const cell = this.getCellFromEvent(event);
+    _$handleMouseDown(event) {
+      const cell = this._$getCellFromEvent(event);
       if (!cell) {
         return;
       }
 
       // 清除之前的选择
-      this.clearSelection();
+      this._$clearSelection();
 
       // 开始选择
-      this.isSelecting = true;
-      this.hasMoved = false; // 重置移动状态
-      this.startCell = cell;
-      this.endCell = cell;
-      this.selectedCells = [cell];
+      this._$_isSelecting = true;
+      this._$_hasMoved = false; // 重置移动状态
+      this._$_startCell = cell;
+      this._$_endCell = cell;
+      this._$_selectedCells = [cell];
 
       // 不在这里创建选择框，等到鼠标移动时再创建
 
@@ -120,35 +120,35 @@ export default {
     /**
      * 处理鼠标移动事件
      */
-    handleMouseMove(event) {
-      if (!this.isSelecting) return;
+    _$handleMouseMove(event) {
+      if (!this._$_isSelecting) return;
 
       // 标记已经移动
-      if (!this.hasMoved) {
-        this.hasMoved = true;
+      if (!this._$_hasMoved) {
+        this._$_hasMoved = true;
         // 第一次移动时创建选择框
-        this.createSelectionBox();
+        this._$createSelectionBox();
       }
 
       // 处理滚动
-      this.handleScrollDuringSelection(event);
+      this._$handleScrollDuringSelection(event);
 
       // 优先更新框选div
-      this.updateSelectionBox();
+      this._$updateSelectionBox();
 
       // 对获取cell进行防抖
       const now = Date.now();
       if (
-        !this.lastCellUpdateTime ||
-        now - this.lastCellUpdateTime > this.cellUpdateDebounce
+        !this._$_lastCellUpdateTime ||
+        now - this._$_lastCellUpdateTime > this._$_cellUpdateDebounce
       ) {
-        const cell = this.getCellFromEvent(event);
+        const cell = this._$getCellFromEvent(event);
         if (cell) {
-          this.endCell = cell;
-          this.updateSelectedCells();
-          this.updateSelectionBox();
+          this._$_endCell = cell;
+          this._$updateSelectedCells();
+          this._$updateSelectionBox();
         }
-        this.lastCellUpdateTime = now;
+        this._$_lastCellUpdateTime = now;
       }
 
       event.preventDefault();
@@ -157,10 +157,10 @@ export default {
     /**
      * 处理鼠标松开事件
      */
-    handleMouseUp(event) {
-      if (!this.isSelecting) return;
+    _$handleMouseUp(event) {
+      if (!this._$_isSelecting) return;
 
-      this.isSelecting = false;
+      this._$_isSelecting = false;
 
       event.preventDefault();
     },
@@ -168,15 +168,15 @@ export default {
     /**
      * 处理键盘事件
      */
-    handleKeyDown(event) {
+    _$handleKeyDown(event) {
       // Ctrl+C 复制
       if (event.ctrlKey && event.key === "c") {
-        this.copySelectedCells();
+        this._$copySelectedCells();
         event.preventDefault();
       }
       // ESC 清除选择
       if (event.key === "Escape") {
-        this.clearSelection();
+        this._$clearSelection();
         event.preventDefault();
       }
     },
@@ -184,7 +184,7 @@ export default {
     /**
      * 处理选择过程中的滚动
      */
-    handleScrollDuringSelection(event) {
+    _$handleScrollDuringSelection(event) {
       const tableEl = this.$refs.xTable?.$el;
       if (!tableEl) return;
 
@@ -217,7 +217,7 @@ export default {
     /**
      * 从事件获取单元格信息
      */
-    getCellFromEvent(event) {
+    _$getCellFromEvent(event) {
       const target = event.target;
       // 尝试多种选择器来找到单元格
       let cell =
@@ -252,21 +252,21 @@ export default {
       }
 
       // 计算行列索引
-      const rowIndex = this.getRowIndex(row);
-      const colIndex = this.getColIndex(cell, row);
+      const rowIndex = this._$getRowIndex(row);
+      const colIndex = this._$getColIndex(cell, row);
 
       return {
         rowIndex,
         colIndex,
         element: cell,
-        data: this.getCellData(rowIndex, colIndex),
+        data: this._$getCellData(rowIndex, colIndex),
       };
     },
 
     /**
      * 获取行索引
      */
-    getRowIndex(row) {
+    _$getRowIndex(row) {
       const table = this.$refs.xTable;
       if (!table) return 0;
 
@@ -285,7 +285,7 @@ export default {
     /**
      * 获取列索引
      */
-    getColIndex(cell, row) {
+    _$getColIndex(cell, row) {
       const cells = row.children || [];
 
       for (let i = 0; i < cells.length; i++) {
@@ -300,7 +300,7 @@ export default {
     /**
      * 获取单元格数据
      */
-    getCellData(rowIndex, colIndex) {
+    _$getCellData(rowIndex, colIndex) {
       const table = this.$refs.xTable;
       if (!table) return null;
 
@@ -324,21 +324,21 @@ export default {
     /**
      * 更新选中的单元格
      */
-    updateSelectedCells() {
-      if (!this.startCell || !this.endCell) return;
+    _$updateSelectedCells() {
+      if (!this._$_startCell || !this._$_endCell) return;
 
-      const startRow = Math.min(this.startCell.rowIndex, this.endCell.rowIndex);
-      const endRow = Math.max(this.startCell.rowIndex, this.endCell.rowIndex);
-      const startCol = Math.min(this.startCell.colIndex, this.endCell.colIndex);
-      const endCol = Math.max(this.startCell.colIndex, this.endCell.colIndex);
+      const startRow = Math.min(this._$_startCell.rowIndex, this._$_endCell.rowIndex);
+      const endRow = Math.max(this._$_startCell.rowIndex, this._$_endCell.rowIndex);
+      const startCol = Math.min(this._$_startCell.colIndex, this._$_endCell.colIndex);
+      const endCol = Math.max(this._$_startCell.colIndex, this._$_endCell.colIndex);
 
-      this.selectedCells = [];
+      this._$_selectedCells = [];
 
       for (let row = startRow; row <= endRow; row++) {
         for (let col = startCol; col <= endCol; col++) {
-          const cellData = this.getCellData(row, col);
+          const cellData = this._$getCellData(row, col);
           if (cellData) {
-            this.selectedCells.push({
+            this._$_selectedCells.push({
               rowIndex: row,
               colIndex: col,
               data: cellData,
@@ -351,8 +351,8 @@ export default {
     /**
      * 创建选择框
      */
-    createSelectionBox() {
-      this.removeSelectionBox();
+    _$createSelectionBox() {
+      this._$removeSelectionBox();
 
       const tableEl = this.$refs.xTable?.$el;
       const container = tableEl?.querySelector(".vxe-table--body-wrapper");
@@ -377,22 +377,22 @@ export default {
       `;
 
       container.appendChild(box);
-      this.updateSelectionBox();
+      this._$updateSelectionBox();
     },
 
     /**
      * 更新选择框位置和大小
      */
-    updateSelectionBox() {
+    _$updateSelectionBox() {
       const tableEl = this.$refs.xTable?.$el;
       const container = tableEl?.querySelector(".vxe-table--body-wrapper");
       const box = document.getElementById("vxe-selection-box");
 
-      if (!box || !this.startCell || !this.endCell || !container) return;
+      if (!box || !this._$_startCell || !this._$_endCell || !container) return;
 
       const containerRect = container.getBoundingClientRect();
-      const startRect = this.startCell.element.getBoundingClientRect();
-      const endRect = this.endCell.element.getBoundingClientRect();
+      const startRect = this._$_startCell.element.getBoundingClientRect();
+      const endRect = this._$_endCell.element.getBoundingClientRect();
 
       const left =
         Math.min(startRect.left, endRect.left) -
@@ -418,7 +418,7 @@ export default {
     /**
      * 移除选择框
      */
-    removeSelectionBox() {
+    _$removeSelectionBox() {
       const box = document.getElementById("vxe-selection-box");
       if (box) {
         box.remove();
@@ -428,28 +428,28 @@ export default {
     /**
      * 清除选择
      */
-    clearSelection() {
-      if (this.isSelecting) return;
-      this.isSelecting = false;
-      this.hasMoved = false; // 重置移动状态
-      this.startCell = null;
-      this.endCell = null;
-      this.selectedCells = [];
-      this.removeSelectionBox();
-      this.lastCellUpdateTime = 0;
+    _$clearSelection() {
+      if (this._$_isSelecting) return;
+      this._$_isSelecting = false;
+      this._$_hasMoved = false; // 重置移动状态
+      this._$_startCell = null;
+      this._$_endCell = null;
+      this._$_selectedCells = [];
+      this._$removeSelectionBox();
+      this._$_lastCellUpdateTime = 0;
     },
 
     /**
      * 复制选中的单元格
      */
-    copySelectedCells() {
-      if (this.selectedCells.length === 0) return;
+    _$copySelectedCells() {
+      if (this._$_selectedCells.length === 0) return;
 
       // 按行列组织数据
       const rows = {};
       const columns = new Set();
 
-      this.selectedCells.forEach((cell) => {
+      this._$_selectedCells.forEach((cell) => {
         if (!rows[cell.rowIndex]) {
           rows[cell.rowIndex] = {};
         }
@@ -475,13 +475,16 @@ export default {
       });
 
       // 复制到剪贴板
-      this.copyToClipboard(text.trim());
+      this._$copyToClipboard(text.trim());
+
+      // 显示成功提示
+      this._$showSuccessTip();
     },
 
     /**
      * 复制文本到剪贴板
      */
-    copyToClipboard(text) {
+    _$copyToClipboard(text) {
       if (navigator.clipboard && window.isSecureContext) {
         // 使用现代 Clipboard API
         navigator.clipboard.writeText(text);
@@ -500,5 +503,34 @@ export default {
       }
     },
 
+    /**
+     * 显示成功提示
+     */
+    _$showSuccessTip() {
+      const tip = document.createElement("div");
+      tip.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: #67c23a;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 6px;
+          font-size: 14px;
+          z-index: 1002;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        ">
+          复制成功！
+        </div>
+      `;
+
+      document.body.appendChild(tip);
+
+      setTimeout(() => {
+        tip.remove();
+      }, 1500);
+    },
   },
 };
