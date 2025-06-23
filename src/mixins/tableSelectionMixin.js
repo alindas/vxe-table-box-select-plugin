@@ -24,14 +24,12 @@ export default {
   mounted() {
     this.$nextTick(() => {
       this.initSelectionEvents()
-      this.initScrollListeners()
       this.initResizeObserver()
     })
   },
 
   beforeDestroy() {
     this.removeSelectionEvents()
-    this.removeScrollListeners()
     this.removeResizeObserver()
   },
 
@@ -63,41 +61,6 @@ export default {
       document.removeEventListener('mousemove', this.handleMouseMove)
       document.removeEventListener('mouseup', this.handleMouseUp)
       document.removeEventListener('keydown', this.handleKeyDown)
-    },
-
-    /**
-     * 初始化滚动监听器
-     */
-    initScrollListeners() {
-      const tableEl = this.$refs.xTable?.$el
-      if (!tableEl) return
-
-      // 监听表格容器的滚动
-      const scrollContainers = [
-        tableEl.querySelector('.vxe-table--body-wrapper'),
-        tableEl.querySelector('.vxe-table--header-wrapper'),
-        window
-      ].filter(Boolean)
-
-      scrollContainers.forEach(container => {
-        const listener = () => {
-          if (this.isSelecting) {
-            this.clearSelection()
-          }
-        }
-        container.addEventListener('scroll', listener, { passive: true })
-        this.scrollListeners.push({ container, listener })
-      })
-    },
-
-    /**
-     * 移除滚动监听器
-     */
-    removeScrollListeners() {
-      this.scrollListeners.forEach(({ container, listener }) => {
-        container.removeEventListener('scroll', listener)
-      })
-      this.scrollListeners = []
     },
 
     /**
@@ -383,6 +346,17 @@ export default {
     createSelectionBox() {
       this.removeSelectionBox()
 
+      const tableEl = this.$refs.xTable?.$el
+      const container = tableEl?.querySelector('.vxe-table--body-wrapper')
+      
+      if (!container) return
+
+      // Ensure the container has a non-static position
+      const containerPosition = window.getComputedStyle(container).position
+      if (containerPosition === 'static') {
+        container.style.position = 'relative'
+      }
+
       const box = document.createElement('div')
       box.id = 'vxe-selection-box'
       box.style.cssText = `
@@ -394,7 +368,7 @@ export default {
         transition: none;
       `
 
-      document.body.appendChild(box)
+      container.appendChild(box)
       this.updateSelectionBox()
     },
 
@@ -402,21 +376,25 @@ export default {
      * 更新选择框位置和大小
      */
     updateSelectionBox() {
+      const tableEl = this.$refs.xTable?.$el
+      const container = tableEl?.querySelector('.vxe-table--body-wrapper')
       const box = document.getElementById('vxe-selection-box')
-      if (!box || !this.startCell || !this.endCell) return
 
+      if (!box || !this.startCell || !this.endCell || !container) return
+
+      const containerRect = container.getBoundingClientRect()
       const startRect = this.startCell.element.getBoundingClientRect()
       const endRect = this.endCell.element.getBoundingClientRect()
 
-      const left = Math.min(startRect.left, endRect.left)
-      const top = Math.min(startRect.top, endRect.top)
-      const width = Math.max(startRect.right, endRect.right) - left
-      const height = Math.max(startRect.bottom, endRect.bottom) - top
+      const left = Math.min(startRect.left, endRect.left) - containerRect.left + container.scrollLeft
+      const top = Math.min(startRect.top, endRect.top) - containerRect.top + container.scrollTop
+      const width = Math.max(startRect.right, endRect.right) - Math.min(startRect.left, endRect.left)
+      const height = Math.max(startRect.bottom, endRect.bottom) - Math.min(startRect.top, endRect.top)
 
-      box.style.left = left + 'px'
-      box.style.top = top + 'px'
-      box.style.width = width + 'px'
-      box.style.height = height + 'px'
+      box.style.left = `${left}px`
+      box.style.top = `${top}px`
+      box.style.width = `${width}px`
+      box.style.height = `${height}px`
     },
 
     /**
