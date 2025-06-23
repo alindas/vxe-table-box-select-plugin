@@ -6,19 +6,19 @@ export default {
   data() {
     return {
       // 选择状态
-      _$_isSelecting: false,
-      _$_hasMoved: false, // 是否已经移动鼠标
-      _$_startCell: null,
-      _$_endCell: null,
-      _$_selectedCells: [],
+      p_$isSelecting: false,
+      p_$hasMoved: false, // 是否已经移动鼠标
+      p_$startCell: null,
+      p_$endCell: null,
+      p_$selectedCells: [],
       // 滚动监听器
-      _$_scrollListeners: [],
+      p_$scrollListeners: [],
       // 尺寸变化监听器
-      _$_resizeObserver: null,
+      p_$resizeObserver: null,
       // 上次cell更新时间戳
-      _$_lastCellUpdateTime: 0,
+      p_$lastCellUpdateTime: 0,
       // 防抖间隔
-      _$_cellUpdateDebounce: 16,
+      p_$cellUpdateDebounce: 16,
     };
   },
 
@@ -74,11 +74,11 @@ export default {
       const tableEl = this.$refs.xTable?.$el;
       if (!tableEl) return;
 
-      this._$_resizeObserver = new ResizeObserver(() => {
+      this._$resizeObserver = new ResizeObserver(() => {
         this._$clearSelection();
       });
 
-      this._$_resizeObserver.observe(tableEl);
+      this._$resizeObserver.observe(tableEl);
     },
 
     /**
@@ -86,9 +86,9 @@ export default {
      */
     _$removeResizeObserver() {
       window.removeEventListener("resize", this._$clearSelection);
-      if (this._$_resizeObserver) {
-        this._$_resizeObserver.disconnect();
-        this._$_resizeObserver = null;
+      if (this._$resizeObserver) {
+        this._$resizeObserver.disconnect();
+        this._$resizeObserver = null;
       }
     },
 
@@ -105,11 +105,11 @@ export default {
       this._$clearSelection();
 
       // 开始选择
-      this._$_isSelecting = true;
-      this._$_hasMoved = false; // 重置移动状态
-      this._$_startCell = cell;
-      this._$_endCell = cell;
-      this._$_selectedCells = [cell];
+      this.p_$isSelecting = true;
+      this.p_$hasMoved = false; // 重置移动状态
+      this.p_$startCell = cell;
+      this.p_$endCell = cell;
+      this.p_$selectedCells = [cell];
 
       // 不在这里创建选择框，等到鼠标移动时再创建
 
@@ -121,11 +121,11 @@ export default {
      * 处理鼠标移动事件
      */
     _$handleMouseMove(event) {
-      if (!this._$_isSelecting) return;
+      if (!this.p_$isSelecting) return;
 
       // 标记已经移动
-      if (!this._$_hasMoved) {
-        this._$_hasMoved = true;
+      if (!this.p_$hasMoved) {
+        this.p_$hasMoved = true;
         // 第一次移动时创建选择框
         this._$createSelectionBox();
       }
@@ -139,16 +139,16 @@ export default {
       // 对获取cell进行防抖
       const now = Date.now();
       if (
-        !this._$_lastCellUpdateTime ||
-        now - this._$_lastCellUpdateTime > this._$_cellUpdateDebounce
+        !this.p_$lastCellUpdateTime ||
+        now - this.p_$lastCellUpdateTime > this.p_$cellUpdateDebounce
       ) {
         const cell = this._$getCellFromEvent(event);
         if (cell) {
-          this._$_endCell = cell;
+          this.p_$endCell = cell;
           this._$updateSelectedCells();
           this._$updateSelectionBox();
         }
-        this._$_lastCellUpdateTime = now;
+        this.p_$lastCellUpdateTime = now;
       }
 
       event.preventDefault();
@@ -158,9 +158,9 @@ export default {
      * 处理鼠标松开事件
      */
     _$handleMouseUp(event) {
-      if (!this._$_isSelecting) return;
+      if (!this.p_$isSelecting) return;
 
-      this._$_isSelecting = false;
+      this.p_$isSelecting = false;
 
       event.preventDefault();
     },
@@ -325,20 +325,20 @@ export default {
      * 更新选中的单元格
      */
     _$updateSelectedCells() {
-      if (!this._$_startCell || !this._$_endCell) return;
+      if (!this.p_$startCell || !this.p_$endCell) return;
 
-      const startRow = Math.min(this._$_startCell.rowIndex, this._$_endCell.rowIndex);
-      const endRow = Math.max(this._$_startCell.rowIndex, this._$_endCell.rowIndex);
-      const startCol = Math.min(this._$_startCell.colIndex, this._$_endCell.colIndex);
-      const endCol = Math.max(this._$_startCell.colIndex, this._$_endCell.colIndex);
+      const startRow = Math.min(this.p_$startCell.rowIndex, this.p_$endCell.rowIndex);
+      const endRow = Math.max(this.p_$startCell.rowIndex, this.p_$endCell.rowIndex);
+      const startCol = Math.min(this.p_$startCell.colIndex, this.p_$endCell.colIndex);
+      const endCol = Math.max(this.p_$startCell.colIndex, this.p_$endCell.colIndex);
 
-      this._$_selectedCells = [];
+      this.p_$selectedCells = [];
 
       for (let row = startRow; row <= endRow; row++) {
         for (let col = startCol; col <= endCol; col++) {
           const cellData = this._$getCellData(row, col);
           if (cellData) {
-            this._$_selectedCells.push({
+            this.p_$selectedCells.push({
               rowIndex: row,
               colIndex: col,
               data: cellData,
@@ -388,11 +388,11 @@ export default {
       const container = tableEl?.querySelector(".vxe-table--body-wrapper");
       const box = document.getElementById("vxe-selection-box");
 
-      if (!box || !this._$_startCell || !this._$_endCell || !container) return;
+      if (!box || !this.p_$startCell || !this.p_$endCell || !container) return;
 
       const containerRect = container.getBoundingClientRect();
-      const startRect = this._$_startCell.element.getBoundingClientRect();
-      const endRect = this._$_endCell.element.getBoundingClientRect();
+      const startRect = this.p_$startCell.element.getBoundingClientRect();
+      const endRect = this.p_$endCell.element.getBoundingClientRect();
 
       const left =
         Math.min(startRect.left, endRect.left) -
@@ -429,27 +429,27 @@ export default {
      * 清除选择
      */
     _$clearSelection() {
-      if (this._$_isSelecting) return;
-      this._$_isSelecting = false;
-      this._$_hasMoved = false; // 重置移动状态
-      this._$_startCell = null;
-      this._$_endCell = null;
-      this._$_selectedCells = [];
+      if (this.p_$isSelecting) return;
+      this.p_$isSelecting = false;
+      this.p_$hasMoved = false; // 重置移动状态
+      this.p_$startCell = null;
+      this.p_$endCell = null;
+      this.p_$selectedCells = [];
       this._$removeSelectionBox();
-      this._$_lastCellUpdateTime = 0;
+      this.p_$lastCellUpdateTime = 0;
     },
 
     /**
      * 复制选中的单元格
      */
     _$copySelectedCells() {
-      if (this._$_selectedCells.length === 0) return;
+      if (this.p_$selectedCells.length === 0) return;
 
       // 按行列组织数据
       const rows = {};
       const columns = new Set();
 
-      this._$_selectedCells.forEach((cell) => {
+      this.p_$selectedCells.forEach((cell) => {
         if (!rows[cell.rowIndex]) {
           rows[cell.rowIndex] = {};
         }

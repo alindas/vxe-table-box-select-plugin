@@ -5,10 +5,10 @@
     <!-- 调试信息 -->
     <div class="debug-info">
       <p>调试信息：</p>
-      <p>选择状态: {{ _$_isSelecting ? '选择中' : '未选择' }}</p>
-      <p>开始单元格: {{ _$_startCell ? `${_$_startCell.rowIndex},${_$_startCell.colIndex}` : '无' }}</p>
-      <p>结束单元格: {{ _$_endCell ? `${_$_endCell.rowIndex},${_$_endCell.colIndex}` : '无' }}</p>
-      <p>选中单元格数: {{ _$_selectedCells.length }}</p>
+      <p>选择状态: {{ p_$isSelecting ? '选择中' : '未选择' }}</p>
+      <p>开始单元格: {{ p_$startCell ? `${p_$startCell.rowIndex},${p_$startCell.colIndex}` : '无' }}</p>
+      <p>结束单元格: {{ p_$endCell ? `${p_$endCell.rowIndex},${p_$endCell.colIndex}` : '无' }}</p>
+      <p>选中单元格数: {{ p_$selectedCells.length }}</p>
     </div>
 
     <!-- 表格 -->
@@ -50,7 +50,7 @@
       <p>总记录数: {{ page.total }}</p>
       <p>当前页记录数: {{ tableData.length }}</p>
       <p>选中记录数: {{ selectedRows.length }}</p>
-      <p>框选单元格数: {{ _$_selectedCells.length }}</p>
+      <p>框选单元格数: {{ p_$selectedCells.length }}</p>
       <p>当前页码: {{ page.currentPage }}/{{ Math.ceil(page.total / page.pageSize) }}</p>
     </div>
   </div>
@@ -105,8 +105,8 @@ export default {
       this.selectedRows = [];
       
       // 清除框选状态
-      if (this._$clearSelection) {
-        this._$clearSelection();
+      if (this.p_$clearSelection) {
+        this.p_$clearSelection();
       }
     },
     tableCellClick(cell) {
@@ -114,8 +114,8 @@ export default {
     },
     handleTableResize() {
       console.log('lhh-log:resize');
-      if (this._$_isSelecting) {
-        this._$clearSelection()
+      if (this.p_$isSelecting) {
+        this.p_$clearSelection()
       }
     },
     // 复选框变化事件
