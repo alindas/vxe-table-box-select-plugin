@@ -10,25 +10,29 @@ export default {
       startCell: null,
       endCell: null,
       selectedCells: [],
-      // 选择样式
-      selectionStyle: {
-        position: 'absolute',
-        border: '2px solid #409eff',
-        backgroundColor: 'rgba(64, 158, 255, 0.1)',
-        pointerEvents: 'none',
-        zIndex: 1000
-      }
+      // 滚动监听器
+      scrollListeners: [],
+      // 尺寸变化监听器
+      resizeObserver: null,
+      // 上次cell更新时间戳
+      lastCellUpdateTime: 0,
+      // 防抖间隔
+      cellUpdateDebounce: 16
     }
   },
 
   mounted() {
     this.$nextTick(() => {
       this.initSelectionEvents()
+      this.initScrollListeners()
+      this.initResizeObserver()
     })
   },
 
   beforeDestroy() {
     this.removeSelectionEvents()
+    this.removeScrollListeners()
+    this.removeResizeObserver()
   },
 
   methods: {
@@ -41,8 +45,6 @@ export default {
         console.warn('vxeTable 引用未找到')
         return
       }
-
-      console.log('初始化选择事件，表格元素:', tableEl)
 
       // 鼠标按下事件
       tableEl.addEventListener('mousedown', this.handleMouseDown)
@@ -64,18 +66,76 @@ export default {
     },
 
     /**
+     * 初始化滚动监听器
+     */
+    initScrollListeners() {
+      const tableEl = this.$refs.xTable?.$el
+      if (!tableEl) return
+
+      // 监听表格容器的滚动
+      const scrollContainers = [
+        tableEl.querySelector('.vxe-table--body-wrapper'),
+        tableEl.querySelector('.vxe-table--header-wrapper'),
+        window
+      ].filter(Boolean)
+
+      scrollContainers.forEach(container => {
+        const listener = () => {
+          if (this.isSelecting) {
+            this.clearSelection()
+          }
+        }
+        container.addEventListener('scroll', listener, { passive: true })
+        this.scrollListeners.push({ container, listener })
+      })
+    },
+
+    /**
+     * 移除滚动监听器
+     */
+    removeScrollListeners() {
+      this.scrollListeners.forEach(({ container, listener }) => {
+        container.removeEventListener('scroll', listener)
+      })
+      this.scrollListeners = []
+    },
+
+    /**
+     * 初始化尺寸变化监听器
+     */
+    initResizeObserver() {
+      if (!window.ResizeObserver) return
+
+      const tableEl = this.$refs.xTable?.$el
+      if (!tableEl) return
+
+      this.resizeObserver = new ResizeObserver(() => {
+        if (this.isSelecting) {
+          this.clearSelection()
+        }
+      })
+
+      this.resizeObserver.observe(tableEl)
+    },
+
+    /**
+     * 移除尺寸变化监听器
+     */
+    removeResizeObserver() {
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect()
+        this.resizeObserver = null
+      }
+    },
+
+    /**
      * 处理鼠标按下事件
      */
     handleMouseDown(event) {
-      console.log('鼠标按下事件:', event.target)
-      
       const cell = this.getCellFromEvent(event)
       if (!cell) {
-        console.log('未找到有效单元格')
         return
       }
-
-      console.log('找到单元格:', cell)
 
       // 清除之前的选择
       this.clearSelection()
@@ -99,12 +159,23 @@ export default {
     handleMouseMove(event) {
       if (!this.isSelecting) return
 
-      const cell = this.getCellFromEvent(event)
-      if (!cell) return
+      // 处理滚动
+      this.handleScrollDuringSelection(event)
 
-      this.endCell = cell
-      this.updateSelectedCells()
+      // 优先更新框选div
       this.updateSelectionBox()
+
+      // 对获取cell进行防抖
+      const now = Date.now()
+      if (!this.lastCellUpdateTime || now - this.lastCellUpdateTime > this.cellUpdateDebounce) {
+        const cell = this.getCellFromEvent(event)
+        if (cell) {
+          this.endCell = cell
+          this.updateSelectedCells()
+          this.updateSelectionBox()
+        }
+        this.lastCellUpdateTime = now
+      }
 
       event.preventDefault()
     },
@@ -114,8 +185,6 @@ export default {
      */
     handleMouseUp(event) {
       if (!this.isSelecting) return
-
-      console.log('鼠标松开，选中单元格数:', this.selectedCells.length)
 
       this.isSelecting = false
       
@@ -144,12 +213,43 @@ export default {
     },
 
     /**
+     * 处理选择过程中的滚动
+     */
+    handleScrollDuringSelection(event) {
+      const tableEl = this.$refs.xTable?.$el
+      if (!tableEl) return
+
+      const bodyWrapper = tableEl.querySelector('.vxe-table--body-wrapper')
+      if (!bodyWrapper) return
+
+      const rect = bodyWrapper.getBoundingClientRect()
+      const scrollSpeed = 10 // 滚动速度
+      const scrollThreshold = 50 // 滚动触发阈值
+
+      // 水平滚动
+      if (event.clientX < rect.left + scrollThreshold) {
+        // 向左滚动
+        bodyWrapper.scrollLeft -= scrollSpeed
+      } else if (event.clientX > rect.right - scrollThreshold) {
+        // 向右滚动
+        bodyWrapper.scrollLeft += scrollSpeed
+      }
+
+      // 垂直滚动
+      if (event.clientY < rect.top + scrollThreshold) {
+        // 向上滚动
+        bodyWrapper.scrollTop -= scrollSpeed
+      } else if (event.clientY > rect.bottom - scrollThreshold) {
+        // 向下滚动
+        bodyWrapper.scrollTop += scrollSpeed
+      }
+    },
+
+    /**
      * 从事件获取单元格信息
      */
     getCellFromEvent(event) {
       const target = event.target
-      console.log('目标元素:', target, '类名:', target.className)
-      
       // 尝试多种选择器来找到单元格
       let cell = target.closest('td') || 
                  target.closest('.vxe-cell') ||
@@ -158,11 +258,18 @@ export default {
                  target.closest('[class*="vxe-body"]')
       
       if (!cell) {
-        console.log('未找到单元格元素')
         return null
       }
 
-      console.log('找到单元格元素:', cell, '类名:', cell.className)
+      // 限制只能选中 table-body 区域内容
+      const tableEl = this.$refs.xTable?.$el
+      if (tableEl) {
+        const bodyWrapper = tableEl.querySelector('.vxe-table--body-wrapper')
+        if (bodyWrapper && !bodyWrapper.contains(cell)) {
+          // cell 不在 body 区域，禁止选中
+          return null
+        }
+      }
 
       // 找到行元素
       let row = cell.closest('tr') || 
@@ -170,17 +277,12 @@ export default {
                 cell.parentElement
 
       if (!row) {
-        console.log('未找到行元素')
         return null
       }
-
-      console.log('找到行元素:', row, '类名:', row.className)
 
       // 计算行列索引
       const rowIndex = this.getRowIndex(row)
       const colIndex = this.getColIndex(cell, row)
-
-      console.log('计算出的索引:', { rowIndex, colIndex })
 
       return {
         rowIndex,
@@ -285,10 +387,11 @@ export default {
       box.id = 'vxe-selection-box'
       box.style.cssText = `
         position: absolute;
-        border: 2px solid #409eff;
+        border: 1px solid #409eff;
         background-color: rgba(64, 158, 255, 0.1);
         pointer-events: none;
         z-index: 1000;
+        transition: none;
       `
 
       document.body.appendChild(box)
@@ -336,6 +439,7 @@ export default {
       this.selectedCells = []
       this.removeSelectionBox()
       this.removeCopyTip()
+      this.lastCellUpdateTime = 0
     },
 
     /**
