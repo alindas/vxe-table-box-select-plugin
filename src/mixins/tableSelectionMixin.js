@@ -476,9 +476,6 @@ export default {
 
       // 复制到剪贴板
       this.copyToClipboard(text.trim());
-
-      // 显示成功提示
-      this.showSuccessTip();
     },
 
     /**
@@ -503,34 +500,5 @@ export default {
       }
     },
 
-    /**
-     * 显示成功提示
-     */
-    showSuccessTip() {
-      const tip = document.createElement("div");
-      tip.innerHTML = `
-        <div style="
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: #67c23a;
-          color: white;
-          padding: 12px 20px;
-          border-radius: 6px;
-          font-size: 14px;
-          z-index: 1002;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        ">
-          复制成功！
-        </div>
-      `;
-
-      document.body.appendChild(tip);
-
-      setTimeout(() => {
-        tip.remove();
-      }, 1500);
-    },
   },
 };
