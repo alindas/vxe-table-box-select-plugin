@@ -81,10 +81,17 @@ class TableSelectionPlugin {
   }
 
   /**
+   * 获取表格对象
+   */
+  _$getTable() {
+    return this.component.$refs[this.tableRef] ? this.component.$refs[this.tableRef].$el : null;
+  }
+
+  /**
    * 初始化选择事件
    */
   _$initSelectionEvents() {
-    const tableEl = this.component.$refs[this.tableRef]?.$el;
+    const tableEl = this._$getTable();
     if (!tableEl) {
       console.warn("vxeTable 引用未找到");
       return;
@@ -116,7 +123,7 @@ class TableSelectionPlugin {
     window.addEventListener("resize", this._$clearSelection);
     if (!window.ResizeObserver) return;
 
-    const tableEl = this.component.$refs[this.tableRef]?.$el;
+    const tableEl = this._$getTable();
     if (!tableEl) return;
 
     this.p_$resizeObserver = new ResizeObserver(() => {
@@ -230,7 +237,7 @@ class TableSelectionPlugin {
    * 处理选择过程中的滚动
    */
   _$handleScrollDuringSelection(event) {
-    const tableEl = this.component.$refs[this.tableRef]?.$el;
+    const tableEl = this._$getTable();
     if (!tableEl) return;
 
     const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
@@ -277,7 +284,7 @@ class TableSelectionPlugin {
     }
 
     // 限制只能选中 table-body 区域内容
-    const tableEl = this.component.$refs[this.tableRef]?.$el;
+    const tableEl = this._$getTable();
     if (tableEl) {
       const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
       if (bodyWrapper && !bodyWrapper.contains(cell)) {
@@ -312,7 +319,7 @@ class TableSelectionPlugin {
    * 获取行索引
    */
   _$getRowIndex(row) {
-    const rowElements = row.parentElement?.children || [];
+    const rowElements = row.parentElement.children || [];
 
     for (let i = 0; i < rowElements.length; i++) {
       if (rowElements[i] === row) {
@@ -412,9 +419,9 @@ class TableSelectionPlugin {
   _$createSelectionBox() {
     this._$removeSelectionBox();
 
-    const tableEl = this.component.$refs[this.tableRef]?.$el;
-    const container = tableEl?.querySelector(".vxe-table--body-wrapper");
-
+    const tableEl = this._$getTable();
+    if (!tableEl) return;
+    const container = tableEl.querySelector(".vxe-table--body-wrapper");
     if (!container) return;
 
     const containerPosition = window.getComputedStyle(container).position;
@@ -441,8 +448,11 @@ class TableSelectionPlugin {
    * 更新选择框位置和大小
    */
   _$updateSelectionBox() {
-    const tableEl = this.component.$refs[this.tableRef]?.$el;
-    const container = tableEl?.querySelector(".vxe-table--body-wrapper");
+    const tableEl = this._$getTable();
+    if (!tableEl) return;
+
+    const container = tableEl.querySelector(".vxe-table--body-wrapper");
+    if (!container) return;
     const box = document.getElementById("vxe-selection-box");
 
     if (!box || !this.p_$startCell || !this.p_$endCell || !container) return;
