@@ -359,7 +359,6 @@ export default {
 
       if (!container) return;
 
-      // Ensure the container has a non-static position
       const containerPosition = window.getComputedStyle(container).position;
       if (containerPosition === "static") {
         container.style.position = "relative";
@@ -486,20 +485,23 @@ export default {
     _$copyToClipboard(text) {
       if (navigator.clipboard && window.isSecureContext) {
         // 使用现代 Clipboard API
-        navigator.clipboard.writeText(text);
+        this._$copyToClipboard = text => navigator.clipboard.writeText(text);
       } else {
         // 降级方案
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand("copy");
-        textArea.remove();
+        this._$copySelectedCells = text => {
+          const textArea = document.createElement("textarea");
+          textArea.value = text;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          textArea.style.top = "-999999px";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          document.execCommand("copy");
+          textArea.remove();
+        }
       }
+      this._$copyToClipboard(text);
     }
   },
 };
