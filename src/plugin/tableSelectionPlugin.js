@@ -371,6 +371,7 @@ class TableSelectionPlugin {
       cellText = cellElement.innerText.trim();
     }
     if (cellText) {
+      
       return {
         value: cellText,
         field: column.field || "",
@@ -380,7 +381,7 @@ class TableSelectionPlugin {
 
     // 2. 否则回退到原始数据
     return {
-      value: row[column.field] || "",
+      value: isNullOrUnDef(row[column.field]) ? "" : row[column.field],
       field: column.field || "",
       title: column.title || "",
     };
@@ -536,7 +537,7 @@ class TableSelectionPlugin {
     sortedRows.forEach((rowIndex) => {
       const row = [];
       sortedCols.forEach((colIndex) => {
-        row.push(rows[rowIndex][colIndex] || "");
+        row.push(rows[rowIndex][colIndex]);
       });
       text += row.join("\t") + "\n";
     });
@@ -578,6 +579,10 @@ class TableSelectionPlugin {
     this._$copyToClipboard(text);
   }
 
+}
+
+function isNullOrUnDef(val) {
+  return typeof val === 'undefined' || val === null;
 }
 
 export default TableSelectionPlugin;
