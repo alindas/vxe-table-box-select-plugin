@@ -304,7 +304,7 @@ class TableSelectionPlugin {
       rowIndex,
       colIndex,
       element: cell,
-      data: this._$getCellData(rowIndex, colIndex),
+      data: this._$getCellData(rowIndex, colIndex, cell),
     };
   }
 
@@ -339,9 +339,12 @@ class TableSelectionPlugin {
   }
 
   /**
-   * 获取单元格数据
+   * 获取单元格数据（优先获取渲染后的文本内容）
+   * @param {number} rowIndex
+   * @param {number} colIndex
+   * @param {HTMLElement} [cellElement]
    */
-  _$getCellData(rowIndex, colIndex) {
+  _$getCellData(rowIndex, colIndex, cellElement) {
     const table = this.component.$refs[this.tableRef];
     if (!table) return null;
 
@@ -355,6 +358,20 @@ class TableSelectionPlugin {
     const row = tableData[rowIndex];
     const column = columns[colIndex];
 
+    // 1. 优先用 cellElement
+    let cellText = '';
+    if (cellElement && cellElement.innerText) {
+      cellText = cellElement.innerText.trim();
+    }
+    if (cellText) {
+      return {
+        value: cellText,
+        field: column.field || "",
+        title: column.title || "",
+      };
+    }
+
+    // 2. 否则回退到原始数据
     return {
       value: row[column.field] || "",
       field: column.field || "",
