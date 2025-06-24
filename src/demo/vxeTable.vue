@@ -13,7 +13,7 @@
 
     <!-- 表格 -->
     <vxe-table
-      ref="xTable" 
+      ref="table" 
       :data="tableData" 
       :checkbox-config="{ checkField: 'checked' }" 
       :sort-config="{ remote: false }"

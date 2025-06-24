@@ -39,7 +39,7 @@ export default {
      * 初始化选择事件
      */
     _$initSelectionEvents() {
-      const tableEl = this.$refs.xTable?.$el;
+      const tableEl = this.$refs.table?.$el;
       if (!tableEl) {
         console.warn("vxeTable 引用未找到");
         return;
@@ -71,7 +71,7 @@ export default {
       window.addEventListener("resize", this._$clearSelection);
       if (!window.ResizeObserver) return;
 
-      const tableEl = this.$refs.xTable?.$el;
+      const tableEl = this.$refs.table?.$el;
       if (!tableEl) return;
 
       this._$resizeObserver = new ResizeObserver(() => {
@@ -185,7 +185,7 @@ export default {
      * 处理选择过程中的滚动
      */
     _$handleScrollDuringSelection(event) {
-      const tableEl = this.$refs.xTable?.$el;
+      const tableEl = this.$refs.table?.$el;
       if (!tableEl) return;
 
       const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
@@ -232,7 +232,7 @@ export default {
       }
 
       // 限制只能选中 table-body 区域内容
-      const tableEl = this.$refs.xTable?.$el;
+      const tableEl = this.$refs.table?.$el;
       if (tableEl) {
         const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
         if (bodyWrapper && !bodyWrapper.contains(cell)) {
@@ -267,7 +267,7 @@ export default {
      * 获取行索引
      */
     _$getRowIndex(row) {
-      const table = this.$refs.xTable;
+      const table = this.$refs.table;
       if (!table) return 0;
 
       const tableData = table.tableData || [];
@@ -301,7 +301,7 @@ export default {
      * 获取单元格数据
      */
     _$getCellData(rowIndex, colIndex) {
-      const table = this.$refs.xTable;
+      const table = this.$refs.table;
       if (!table) return null;
 
       const tableData = table.tableData || [];
@@ -354,7 +354,7 @@ export default {
     _$createSelectionBox() {
       this._$removeSelectionBox();
 
-      const tableEl = this.$refs.xTable?.$el;
+      const tableEl = this.$refs.table?.$el;
       const container = tableEl?.querySelector(".vxe-table--body-wrapper");
 
       if (!container) return;
@@ -369,10 +369,10 @@ export default {
       box.id = "vxe-selection-box";
       box.style.cssText = `
         position: absolute;
-        border: 1px solid #409eff;
+        border: 1px solid #1d22ab;
         background-color: rgba(64, 158, 255, 0.1);
         pointer-events: none;
-        z-index: 1000;
+        z-index: 1;
         transition: none;
       `;
 
@@ -384,7 +384,7 @@ export default {
      * 更新选择框位置和大小
      */
     _$updateSelectionBox() {
-      const tableEl = this.$refs.xTable?.$el;
+      const tableEl = this.$refs.table?.$el;
       const container = tableEl?.querySelector(".vxe-table--body-wrapper");
       const box = document.getElementById("vxe-selection-box");
 
@@ -443,6 +443,7 @@ export default {
      * 复制选中的单元格
      */
     _$copySelectedCells() {
+      console.log('lhh-log:this.p_$selectedCells', this.p_$selectedCells, this.p_$selectedCells.length);
       if (this.p_$selectedCells.length === 0) return;
 
       // 按行列组织数据
@@ -473,12 +474,10 @@ export default {
         });
         text += row.join("\t") + "\n";
       });
+      console.log('lhh-log:copy-text', text);
 
       // 复制到剪贴板
       this._$copyToClipboard(text.trim());
-
-      // 显示成功提示
-      this._$showSuccessTip();
     },
 
     /**
@@ -501,36 +500,6 @@ export default {
         document.execCommand("copy");
         textArea.remove();
       }
-    },
-
-    /**
-     * 显示成功提示
-     */
-    _$showSuccessTip() {
-      const tip = document.createElement("div");
-      tip.innerHTML = `
-        <div style="
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: #67c23a;
-          color: white;
-          padding: 12px 20px;
-          border-radius: 6px;
-          font-size: 14px;
-          z-index: 1002;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        ">
-          复制成功！
-        </div>
-      `;
-
-      document.body.appendChild(tip);
-
-      setTimeout(() => {
-        tip.remove();
-      }, 1500);
-    },
+    }
   },
 };
