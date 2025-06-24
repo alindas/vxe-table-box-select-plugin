@@ -5,10 +5,10 @@
     <!-- 调试信息 -->
     <div class="debug-info">
       <p>调试信息：</p>
-      <p>选择状态: {{ p_$isSelecting ? '选择中' : '未选择' }}</p>
-      <p>开始单元格: {{ p_$startCell ? `${p_$startCell.rowIndex},${p_$startCell.colIndex}` : '无' }}</p>
-      <p>结束单元格: {{ p_$endCell ? `${p_$endCell.rowIndex},${p_$endCell.colIndex}` : '无' }}</p>
-      <p>选中单元格数: {{ p_$selectedCells.length }}</p>
+      <p>选择状态: {{ selectionState.isSelecting ? '选择中' : '未选择' }}</p>
+      <p>开始单元格: {{ selectionState.startCell ? `${selectionState.startCell.rowIndex},${selectionState.startCell.colIndex}` : '无' }}</p>
+      <p>结束单元格: {{ selectionState.endCell ? `${selectionState.endCell.rowIndex},${selectionState.endCell.colIndex}` : '无' }}</p>
+      <p>选中单元格数: {{ selectionState.selectedCells.length }}</p>
     </div>
 
     <!-- 表格 -->
@@ -50,18 +50,17 @@
       <p>总记录数: {{ page.total }}</p>
       <p>当前页记录数: {{ tableData.length }}</p>
       <p>选中记录数: {{ selectedRows.length }}</p>
-      <p>框选单元格数: {{ p_$selectedCells.length }}</p>
+      <p>框选单元格数: {{ selectionState.selectedCells.length }}</p>
       <p>当前页码: {{ page.currentPage }}/{{ Math.ceil(page.total / page.pageSize) }}</p>
     </div>
   </div>
 </template>
 
 <script>
-import tableSelectionMixin from '../mixins/tableSelectionMixin.js'
+import TableSelectionPlugin from '../plugin/tableSelectionPlugin.js'
 
 export default {
   name: 'VxeTableDemo',
-  mixins: [tableSelectionMixin],
   data() {
     return {
       // 完整数据
@@ -86,12 +85,26 @@ export default {
         currentPage: 1,
         pageSize: 10,
         total: 100
-      }
+      },
+      // 表格选择插件实例
+      tableSelectionPlugin: null
     }
+  },
+  created() {
+    this.tableSelectionPlugin = new TableSelectionPlugin(this, 'table');
   },
   mounted() {
     // 初始化第一页数据
     this.loadPageData();
+    this.$nextTick(() => {
+      this.tableSelectionPlugin.init();
+    })
+  },
+  beforeDestroy() {
+    // 移除表格选择插件
+    if (this.tableSelectionPlugin) {
+      this.tableSelectionPlugin.remove();
+    }
   },
   methods: {
     // 加载当前页数据
@@ -105,8 +118,8 @@ export default {
       this.selectedRows = [];
       
       // 清除框选状态
-      if (this.p_$clearSelection) {
-        this.p_$clearSelection();
+      if (this.tableSelectionPlugin) {
+        this.tableSelectionPlugin.clearSelection();
       }
     },
     tableCellClick(cell) {
@@ -114,8 +127,11 @@ export default {
     },
     handleTableResize() {
       console.log('lhh-log:resize');
-      if (this.p_$isSelecting) {
-        this.p_$clearSelection()
+      if (this.tableSelectionPlugin) {
+        const state = this.tableSelectionPlugin.getSelectionState();
+        if (state.isSelecting) {
+          this.tableSelectionPlugin.clearSelection();
+        }
       }
     },
     // 复选框变化事件
@@ -140,6 +156,18 @@ export default {
       
       // 重新加载当前页数据
       this.loadPageData();
+    }
+  },
+  computed: {
+    // 计算属性：获取选择状态
+    selectionState() {
+      return this.tableSelectionPlugin ? this.tableSelectionPlugin.getSelectionState() : {
+        isSelecting: false,
+        hasMoved: false,
+        startCell: null,
+        endCell: null,
+        selectedCells: []
+      };
     }
   }
 }
