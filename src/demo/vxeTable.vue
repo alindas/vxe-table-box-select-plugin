@@ -68,7 +68,7 @@ export default {
         {
           id: i + 1,
           name: '张三' + (i + 1),
-          age: 20 + Math.floor(Math.random() * 40),
+          age: 0,
           gender: Math.random() > 0.5 ? '男' : '女',
           email: `user${i + 1}@example.com`,
           phone: '138' + String(Math.floor(Math.random() * 100000000)).padStart(8, '0'),

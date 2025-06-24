@@ -267,7 +267,7 @@ class TableSelectionPlugin {
   }
 
   /**
-   * 从事件获取单元格信息
+   * 从事件获取单元格信息（不带 data 字段）
    */
   _$getCellFromEvent(event) {
     const target = event.target;
@@ -310,8 +310,7 @@ class TableSelectionPlugin {
     return {
       rowIndex,
       colIndex,
-      element: cell,
-      data: this._$getCellData(rowIndex, colIndex, cell),
+      element: cell
     };
   }
 
@@ -371,7 +370,6 @@ class TableSelectionPlugin {
       cellText = cellElement.innerText.trim();
     }
     if (cellText) {
-      
       return {
         value: cellText,
         field: column.field || "",
@@ -388,7 +386,7 @@ class TableSelectionPlugin {
   }
 
   /**
-   * 更新选中的单元格
+   * 遍历区域，统一获取所有 cell 的数据
    */
   _$updateSelectedCells() {
     if (!this.p_$startCell || !this.p_$endCell) return;
@@ -400,16 +398,25 @@ class TableSelectionPlugin {
 
     this.p_$selectedCells = [];
 
+    // 通过 DOM 定位 tr/td，保证 element 一致
+    const tableEl = this._$getTable();
+    let bodyRows = [];
+    if (tableEl) {
+      bodyRows = tableEl.querySelectorAll('.vxe-table--body-wrapper tbody tr');
+    }
+
     for (let row = startRow; row <= endRow; row++) {
       for (let col = startCol; col <= endCol; col++) {
-        const cellData = this._$getCellData(row, col);
-        if (cellData) {
-          this.p_$selectedCells.push({
-            rowIndex: row,
-            colIndex: col,
-            data: cellData,
-          });
+        let cellElement = null;
+        if (bodyRows[row]) {
+          cellElement = bodyRows[row].children[col];
         }
+        this.p_$selectedCells.push({
+          rowIndex: row,
+          colIndex: col,
+          element: cellElement,
+          data: this._$getCellData(row, col, cellElement)
+        });
       }
     }
   }
