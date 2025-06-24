@@ -22,7 +22,6 @@
       :scroll-y="{ enabled: true }" 
       height="400"
       min-width="1200"
-      @cell-click="tableCellClick"
       @checkbox-change="checkboxChangeEvent" 
       @checkbox-all="checkboxAllEvent" 
       @sort-change="sortChangeEvent"
@@ -30,7 +29,11 @@
       <vxe-column type="checkbox" width="60" fixed="left"></vxe-column>
       <vxe-column type="seq" width="60" title="序号" fixed="left"></vxe-column>
       <vxe-column field="name" width="120" title="姓名" sortable></vxe-column>
-      <vxe-column field="age" width="80" title="年龄" sortable></vxe-column>
+      <vxe-column field="age" width="80" title="年龄" sortable>
+        <template #default="{ row }">
+          <input type="text" v-model="row.age" />
+        </template>
+      </vxe-column>
       <vxe-column field="gender" width="80" title="性别"></vxe-column>
       <vxe-column field="email" width="200" title="邮箱" sortable></vxe-column>
       <vxe-column field="phone" width="140" title="电话"></vxe-column>
@@ -121,9 +124,6 @@ export default {
       if (this.tableSelectionPlugin) {
         this.tableSelectionPlugin.clearSelection();
       }
-    },
-    tableCellClick(cell) {
-      console.log('lhh-log:cellClick', cell);
     },
     handleTableResize() {
       console.log('lhh-log:resize');

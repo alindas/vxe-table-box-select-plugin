@@ -97,6 +97,9 @@ class TableSelectionPlugin {
       return;
     }
 
+    // 禁止表格内文本被选中
+    tableEl.style.userSelect = "none";
+
     // 鼠标按下事件
     tableEl.addEventListener("mousedown", this._$handleMouseDown);
     // 鼠标移动事件
@@ -105,6 +108,8 @@ class TableSelectionPlugin {
     document.addEventListener("mouseup", this._$handleMouseUp);
     // 键盘事件
     document.addEventListener("keydown", this._$handleKeyDown);
+    // 表格外点击清除选择
+    document.addEventListener("mousedown", this._$handleDocumentMouseDown);
   }
 
   /**
@@ -114,6 +119,7 @@ class TableSelectionPlugin {
     document.removeEventListener("mousemove", this._$handleMouseMove);
     document.removeEventListener("mouseup", this._$handleMouseUp);
     document.removeEventListener("keydown", this._$handleKeyDown);
+    document.removeEventListener("mousedown", this._$handleDocumentMouseDown);
   }
 
   /**
@@ -163,10 +169,6 @@ class TableSelectionPlugin {
     this.p_$endCell = cell;
     this.p_$selectedCells = [cell];
 
-    // 不在这里创建选择框，等到鼠标移动时再创建
-
-    // 阻止默认行为
-    event.preventDefault();
   }
 
   /**
@@ -175,11 +177,23 @@ class TableSelectionPlugin {
   _$handleMouseMove(event) {
     if (!this.p_$isSelecting) return;
 
-    // 标记已经移动
+    // 计算移动距离，超过阈值才进入框选
     if (!this.p_$hasMoved) {
-      this.p_$hasMoved = true;
-      // 第一次移动时创建选择框
-      this._$createSelectionBox();
+      const start = this.p_$startCell && this.p_$startCell.element;
+      if (start) {
+        const startRect = start.getBoundingClientRect();
+        const dx = event.clientX - (startRect.left + startRect.width / 2);
+        const dy = event.clientY - (startRect.top + startRect.height / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 50) {
+          this.p_$hasMoved = true;
+          // 第一次移动时创建选择框
+          this._$createSelectionBox();
+        } else {
+          // 未超过阈值不进入框选
+          return;
+        }
+      }
     }
 
     // 处理滚动
@@ -221,9 +235,22 @@ class TableSelectionPlugin {
   }
 
   /**
+   * 处理表格外点击，清除选择
+   */
+  _$handleDocumentMouseDown = (event) => {
+    const tableEl = this._$getTable();
+    if (!tableEl) return;
+    if (!tableEl.contains(event.target)) {
+      this._$clearSelection();
+    }
+  }
+
+  /**
    * 处理键盘事件
    */
   _$handleKeyDown(event) {
+    // 只有有框选项时才响应
+    if (!this.p_$selectedCells || this.p_$selectedCells.length === 0) return;
     // Ctrl/Cmd+C 复制
     if ((event.ctrlKey || event.metaKey) && event.key === "c") {
       this._$copySelectedCells();
