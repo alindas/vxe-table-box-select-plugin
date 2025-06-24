@@ -197,7 +197,7 @@ class TableSelectionPlugin {
       const cell = this._$getCellFromEvent(event);
       if (cell) {
         this.p_$endCell = cell;
-        this._$updateSelectedCells();
+        // 不再调用 this._$updateSelectedCells();
         this._$updateSelectionBox();
       }
       this.p_$lastCellUpdateTime = now;
@@ -213,6 +213,9 @@ class TableSelectionPlugin {
     if (!this.p_$isSelecting) return;
 
     this.p_$isSelecting = false;
+
+    // 在松开鼠标时，统一获取所有 cell 的 data
+    this._$updateSelectedCells();
 
     event.preventDefault();
   }
