@@ -224,13 +224,13 @@ class TableSelectionPlugin {
    * 处理键盘事件
    */
   _$handleKeyDown(event) {
-    // Ctrl+C 复制
-    if (event.ctrlKey && event.key === "c") {
+    // Ctrl/Cmd+C 复制
+    if ((event.ctrlKey || event.metaKey) && event.key === "c") {
       this._$copySelectedCells();
       event.preventDefault();
     }
-    // ESC 清除选择
-    if (event.key === "Escape") {
+    // ESC 或 Cmd+ESC 清除选择
+    if (event.key === "Escape" || (event.metaKey && event.key === "Escape")) {
       this._$clearSelection();
       event.preventDefault();
     }
