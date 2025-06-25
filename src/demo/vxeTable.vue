@@ -31,7 +31,7 @@
       <vxe-column field="name" width="120" title="姓名" sortable></vxe-column>
       <vxe-column field="age" width="80" title="年龄" sortable>
         <template #default="{ row }">
-          <input type="text" v-model="row.age" />
+          <input type="text" v-model="row.age" :style="{ width: '100%' }"/>
         </template>
       </vxe-column>
       <vxe-column field="gender" width="80" title="性别"></vxe-column>

@@ -13,6 +13,11 @@ class TableSelectionPlugin {
     this.p_$startCell = null;
     this.p_$endCell = null;
     this.p_$selectedCells = [];
+    // 起始位置信息
+    this.p_$startPosition = null;
+    this.p_$bodyWrapperDom = null;
+    // bodyWrapper 位置信息
+    this.p_$bodyWrapperRect = null;
     // 滚动监听器
     this.p_$scrollListeners = [];
     // 尺寸变化监听器
@@ -169,6 +174,11 @@ class TableSelectionPlugin {
     this.p_$endCell = cell;
     this.p_$selectedCells = [cell];
 
+    // 记录起始位置信息
+    this.p_$startPosition = {
+      x: event.clientX,
+      y: event.clientY
+    };
   }
 
   /**
@@ -179,16 +189,24 @@ class TableSelectionPlugin {
 
     // 计算移动距离，超过阈值才进入框选
     if (!this.p_$hasMoved) {
-      const start = this.p_$startCell && this.p_$startCell.element;
-      if (start) {
-        const startRect = start.getBoundingClientRect();
-        const dx = event.clientX - (startRect.left + startRect.width / 2);
-        const dy = event.clientY - (startRect.top + startRect.height / 2);
+      if (this.p_$startPosition) {
+        const dx = event.clientX - this.p_$startPosition.x;
+        const dy = event.clientY - this.p_$startPosition.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 50) {
+        if (distance > 30) {
           this.p_$hasMoved = true;
           // 第一次移动时创建选择框
           this._$createSelectionBox();
+          
+          // 获取 bodyWrapper 的 rect 信息
+          const tableEl = this._$getTable();
+          if (tableEl) {
+            const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
+            if (bodyWrapper) {
+              this.p_$bodyWrapperDom = bodyWrapper;
+              this.p_$bodyWrapperRect = bodyWrapper.getBoundingClientRect();
+            }
+          }
         } else {
           // 未超过阈值不进入框选
           return;
@@ -267,32 +285,29 @@ class TableSelectionPlugin {
    * 处理选择过程中的滚动
    */
   _$handleScrollDuringSelection(event) {
-    const tableEl = this._$getTable();
-    if (!tableEl) return;
+    if (!this.p_$bodyWrapperDom || !this.p_$bodyWrapperRect) return;
 
-    const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
-    if (!bodyWrapper) return;
 
-    const rect = bodyWrapper.getBoundingClientRect();
+    const rect = this.p_$bodyWrapperRect;
     const scrollSpeed = 10; // 滚动速度
     const scrollThreshold = 50; // 滚动触发阈值
 
     // 水平滚动
     if (event.clientX < rect.left + scrollThreshold) {
       // 向左滚动
-      bodyWrapper.scrollLeft -= scrollSpeed;
+      this.p_$bodyWrapperDom.scrollLeft -= scrollSpeed;
     } else if (event.clientX > rect.right - scrollThreshold) {
       // 向右滚动
-      bodyWrapper.scrollLeft += scrollSpeed;
+      this.p_$bodyWrapperDom.scrollLeft += scrollSpeed;
     }
 
     // 垂直滚动
     if (event.clientY < rect.top + scrollThreshold) {
       // 向上滚动
-      bodyWrapper.scrollTop -= scrollSpeed;
+      this.p_$bodyWrapperDom.scrollTop -= scrollSpeed;
     } else if (event.clientY > rect.bottom - scrollThreshold) {
       // 向下滚动
-      bodyWrapper.scrollTop += scrollSpeed;
+      this.p_$bodyWrapperDom.scrollTop += scrollSpeed;
     }
   }
 
@@ -542,6 +557,9 @@ class TableSelectionPlugin {
     this.p_$selectedCells = [];
     this._$removeSelectionBox();
     this.p_$lastCellUpdateTime = 0;
+    this.p_$startPosition = null;
+    this.p_$bodyWrapperDom = null;
+    this.p_$bodyWrapperRect = null;
   }
 
   /**
