@@ -49,6 +49,7 @@ class TableSelectionPlugin {
   remove() {
     this._$removeSelectionEvents();
     this._$removeResizeObserver();
+    this._$clearSelection();
   }
 
   /**
@@ -159,32 +160,42 @@ class TableSelectionPlugin {
    * 处理鼠标按下事件
    */
   _$handleMouseDown(event) {
+    const tableEl = this._$getTable();
+    if (!tableEl) return;
+    const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
+    if (!bodyWrapper) return;
+    // 容器对象，getCellFromEvent 里临时用到
+    this.p_$bodyWrapperDom = bodyWrapper;
     const cell = this._$getCellFromEvent(event);
     if (!cell) {
       return;
     }
-
+    
     // 清除之前的选择
     this._$clearSelection();
-
+    
     // 开始选择
     this.p_$isSelecting = true;
     this.p_$hasMoved = false; // 重置移动状态
     this.p_$startCell = cell;
     this.p_$endCell = cell;
     this.p_$selectedCells = [cell];
-
+    
     // 记录起始位置信息
     this.p_$startPosition = {
       x: event.clientX,
       y: event.clientY
     };
+    // 容器对象
+    this.p_$bodyWrapperDom = bodyWrapper;
   }
 
   /**
    * 处理鼠标移动事件
    */
   _$handleMouseMove(event) {
+    event.preventDefault();
+
     if (!this.p_$isSelecting) return;
 
     // 计算移动距离，超过阈值才进入框选
@@ -194,48 +205,40 @@ class TableSelectionPlugin {
         const dy = event.clientY - this.p_$startPosition.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance > 30) {
-          this.p_$hasMoved = true;
-          // 第一次移动时创建选择框
+          // 先获取 bodyWrapper 的 rect 信息
+          this.p_$bodyWrapperRect = this.p_$bodyWrapperDom.getBoundingClientRect();
+          
+          // 然后创建选择框
           this._$createSelectionBox();
           
-          // 获取 bodyWrapper 的 rect 信息
-          const tableEl = this._$getTable();
-          if (tableEl) {
-            const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
-            if (bodyWrapper) {
-              this.p_$bodyWrapperDom = bodyWrapper;
-              this.p_$bodyWrapperRect = bodyWrapper.getBoundingClientRect();
-            }
-          }
+          this.p_$hasMoved = true;
         } else {
           // 未超过阈值不进入框选
           return;
         }
       }
-    }
-
-    // 处理滚动
-    this._$handleScrollDuringSelection(event);
-
-    // 优先更新框选div
-    this._$updateSelectionBox();
-
-    // 对获取cell进行防抖
-    const now = Date.now();
-    if (
-      !this.p_$lastCellUpdateTime ||
-      now - this.p_$lastCellUpdateTime > this.p_$cellUpdateDebounce
-    ) {
-      const cell = this._$getCellFromEvent(event);
-      if (cell) {
-        this.p_$endCell = cell;
-        // 不再调用 this._$updateSelectedCells();
-        this._$updateSelectionBox();
+    } else {
+      // 处理滚动
+      this._$handleScrollDuringSelection(event);
+  
+      // 优先更新框选div
+      this._$updateSelectionBox();
+  
+      // 对获取cell进行防抖
+      const now = Date.now();
+      if (
+        !this.p_$lastCellUpdateTime ||
+        now - this.p_$lastCellUpdateTime > this.p_$cellUpdateDebounce
+      ) {
+        const cell = this._$getCellFromEvent(event);
+        if (cell) {
+          this.p_$endCell = cell;
+          // 不再调用 this._$updateSelectedCells();
+          this._$updateSelectionBox();
+        }
+        this.p_$lastCellUpdateTime = now;
       }
-      this.p_$lastCellUpdateTime = now;
     }
-
-    event.preventDefault();
   }
 
   /**
@@ -290,7 +293,7 @@ class TableSelectionPlugin {
 
     const rect = this.p_$bodyWrapperRect;
     const scrollSpeed = 10; // 滚动速度
-    const scrollThreshold = 50; // 滚动触发阈值
+    const scrollThreshold = 30; // 滚动触发阈值
 
     // 水平滚动
     if (event.clientX < rect.left + scrollThreshold) {
@@ -329,13 +332,9 @@ class TableSelectionPlugin {
     }
 
     // 限制只能选中 table-body 区域内容
-    const tableEl = this._$getTable();
-    if (tableEl) {
-      const bodyWrapper = tableEl.querySelector(".vxe-table--body-wrapper");
-      if (bodyWrapper && !bodyWrapper.contains(cell)) {
-        // cell 不在 body 区域，禁止选中
-        return null;
-      }
+    if (!this.p_$bodyWrapperDom.contains(cell)) {
+      // cell 不在 body 区域，禁止选中
+      return null;
     }
 
     // 找到行元素
@@ -471,15 +470,9 @@ class TableSelectionPlugin {
    */
   _$createSelectionBox() {
     this._$removeSelectionBox();
-
-    const tableEl = this._$getTable();
-    if (!tableEl) return;
-    const container = tableEl.querySelector(".vxe-table--body-wrapper");
-    if (!container) return;
-
-    const containerPosition = window.getComputedStyle(container).position;
+    const containerPosition = window.getComputedStyle(this.p_$bodyWrapperDom).position;
     if (containerPosition === "static") {
-      container.style.position = "relative";
+      this.p_$bodyWrapperDom.style.position = "relative";
     }
 
     const box = document.createElement("div");
@@ -493,7 +486,7 @@ class TableSelectionPlugin {
       transition: none;
     `;
 
-    container.appendChild(box);
+    this.p_$bodyWrapperDom.appendChild(box);
     this._$updateSelectionBox();
   }
 
@@ -501,27 +494,21 @@ class TableSelectionPlugin {
    * 更新选择框位置和大小
    */
   _$updateSelectionBox() {
-    const tableEl = this._$getTable();
-    if (!tableEl) return;
-
-    const container = tableEl.querySelector(".vxe-table--body-wrapper");
-    if (!container) return;
     const box = document.getElementById("vxe-selection-box");
 
-    if (!box || !this.p_$startCell || !this.p_$endCell || !container) return;
+    if (!box || !this.p_$startCell || !this.p_$endCell) return;
 
-    const containerRect = container.getBoundingClientRect();
     const startRect = this.p_$startCell.element.getBoundingClientRect();
     const endRect = this.p_$endCell.element.getBoundingClientRect();
 
     const left =
       Math.min(startRect.left, endRect.left) -
-      containerRect.left +
-      container.scrollLeft;
+      this.p_$bodyWrapperRect.left +
+      this.p_$bodyWrapperDom.scrollLeft;
     const top =
       Math.min(startRect.top, endRect.top) -
-      containerRect.top +
-      container.scrollTop;
+      this.p_$bodyWrapperRect.top +
+      this.p_$bodyWrapperDom.scrollTop;
     const width =
       Math.max(startRect.right, endRect.right) -
       Math.min(startRect.left, endRect.left);
