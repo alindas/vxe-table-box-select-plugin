@@ -408,7 +408,7 @@ class TableSelectionPlugin {
     const row = tableData[rowIndex];
     const column = columns[colIndex];
 
-    // 1. 优先用 cellElement
+    // 1. 优先使用 cellElement 的 innerText
     let cellText = '';
     if (cellElement && cellElement.innerText) {
       cellText = cellElement.innerText.trim();
@@ -421,7 +421,19 @@ class TableSelectionPlugin {
       };
     }
 
-    // 2. 否则回退到原始数据
+    // 2. 其次检查是否有 input 元素
+    if (cellElement) {
+      const inputElement = cellElement.querySelector('input');
+      if (inputElement && inputElement.value !== undefined) {
+        return {
+          value: inputElement.value,
+          field: column.field || "",
+          title: column.title || "",
+        };
+      }
+    }
+
+    // 3. 最后回退到原始数据
     return {
       value: isNullOrUnDef(row[column.field]) ? "" : row[column.field],
       field: column.field || "",
